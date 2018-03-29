@@ -14,6 +14,7 @@ Bugfixes:
 Features:
  * Code Generator: Initialize arrays without using ``msize()``.
  * Code Generator: More specialized and thus optimized implementation for ``x.push(...)``
+ * Code Generator: Use native shift instructions on target Constantinople.
  * Commandline interface: Error when missing or inaccessible file detected. Suppress it with the ``--ignore-missing`` flag.
  * Constant Evaluator: Fix evaluation of single element tuples.
  * General: Add encoding routines ``abi.encodePacked``, ``abi.encode``, ``abi.encodeWithSelector`` and ``abi.encodeWithSignature``.
