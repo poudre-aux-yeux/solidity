@@ -111,6 +111,7 @@ private:
 	smt::CheckResult checkSatisfiable();
 
 	void initializeLocalVariables(FunctionDefinition const& _function);
+	void resetStateVariables();
 	void resetVariables(std::vector<Declaration const*> _variables);
 	/// Given two different branches and the touched variables,
 	/// merge the touched variables into after-branch ite variables
@@ -119,6 +120,7 @@ private:
 	/// Tries to create an uninitialized variable and returns true on success.
 	/// This fails if the type is not supported.
 	bool createVariable(VariableDeclaration const& _varDecl);
+	bool createStateVariable(VariableDeclaration const& _varDecl);
 
 	static std::string uniqueSymbol(Expression const& _expr);
 
@@ -163,6 +165,7 @@ private:
 	bool m_conditionalExecutionHappened = false;
 	std::map<Expression const*, smt::Expression> m_expressions;
 	std::map<Declaration const*, SSAVariable> m_variables;
+	std::map<Declaration const*, SSAVariable> m_stateVariables;
 	std::vector<smt::Expression> m_pathConditions;
 	ErrorReporter& m_errorReporter;
 

@@ -62,6 +62,8 @@ void SMTChecker::endVisit(VariableDeclaration const& _varDecl)
 {
 	if (_varDecl.isLocalVariable() && _varDecl.type()->isValueType() &&_varDecl.value())
 		assignment(_varDecl, *_varDecl.value(), _varDecl.location());
+	else if (_varDecl.isStateVariable() && _varDecl.type()->isValueType())
+		createStateVariable(_varDecl);
 }
 
 bool SMTChecker::visit(FunctionDefinition const& _function)
@@ -76,9 +78,11 @@ bool SMTChecker::visit(FunctionDefinition const& _function)
 	// If we add storage variables, those should be cleared differently.
 	m_interface->reset();
 	m_variables.clear();
+	m_variables.insert(m_stateVariables.begin(), m_stateVariables.end());
 	m_pathConditions.clear();
 	m_conditionalExecutionHappened = false;
 	initializeLocalVariables(_function);
+	resetStateVariables();
 	return true;
 }
 
@@ -586,6 +590,12 @@ void SMTChecker::checkCondition(
 				expressionsToEvaluate.emplace_back(currentValue(*var));
 				expressionNames.push_back(var->name());
 			}
+		for (auto const& var: m_stateVariables)
+			if (knownVariable(*var.first))
+			{
+				expressionsToEvaluate.emplace_back(currentValue(*var.first));
+				expressionNames.push_back(var.first->name());
+			}
 	}
 	smt::CheckResult result;
 	vector<string> values;
@@ -722,6 +732,15 @@ void SMTChecker::initializeLocalVariables(FunctionDefinition const& _function)
 				setZeroValue(*retParam);
 }
 
+void SMTChecker::resetStateVariables()
+{
+	for (auto const& variable: m_stateVariables)
+	{
+		newValue(*(variable.first));
+		setUnknownValue(*(variable.first));
+	}
+}
+
 void SMTChecker::resetVariables(vector<Declaration const*> _variables)
 {
 	for (auto const* decl: _variables)
@@ -753,6 +772,24 @@ bool SMTChecker::createVariable(VariableDeclaration const& _varDecl)
 	{
 		solAssert(m_variables.count(&_varDecl) == 0, "");
 		m_variables.emplace(&_varDecl, SSAVariable(_varDecl, *m_interface));
+		return true;
+	}
+	else
+	{
+		m_errorReporter.warning(
+			_varDecl.location(),
+			"Assertion checker does not yet support the type of this variable."
+		);
+		return false;
+	}
+}
+
+bool SMTChecker::createStateVariable(VariableDeclaration const& _varDecl)
+{
+	if (SSAVariable::isSupportedType(_varDecl.type()->category()))
+	{
+		solAssert(m_stateVariables.count(&_varDecl) == 0, "");
+		m_stateVariables.emplace(&_varDecl, SSAVariable(_varDecl, *m_interface));
 		return true;
 	}
 	else
