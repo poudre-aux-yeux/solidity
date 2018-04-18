@@ -1072,6 +1072,76 @@ BOOST_AUTO_TEST_CASE(cse_sub_zero)
 	});
 }
 
+BOOST_AUTO_TEST_CASE(cse_remove_unwanted_masking_of_address)
+{
+	vector<Instruction> ops{
+		Instruction::ADDRESS,
+		Instruction::CALLER,
+		Instruction::ORIGIN,
+		Instruction::COINBASE
+	};
+	for (auto const& op: ops)
+	{
+		checkCSE({
+			u256("0xffffffffffffffffffffffffffffffffffffffff"),
+			op,
+			Instruction::AND
+		}, {
+			op
+		});
+
+		checkCSE({
+			op,
+			u256("0xffffffffffffffffffffffffffffffffffffffff"),
+			Instruction::AND
+		}, {
+			op
+		});
+
+		// do not remove mask for other masking
+		checkCSE({
+			u256(1234),
+			op,
+			Instruction::AND
+		}, {
+			op,
+			u256(1234),
+			Instruction::AND
+		});
+
+		checkCSE({
+			op,
+			u256(1234),
+			Instruction::AND
+		}, {
+			u256(1234),
+			op,
+			Instruction::AND
+		});
+	}
+
+	// leave other opcodes untouched
+	checkCSE({
+		u256("0xffffffffffffffffffffffffffffffffffffffff"),
+		Instruction::BALANCE,
+		Instruction::AND
+	}, {
+		u256("0xffffffffffffffffffffffffffffffffffffffff"),
+		Instruction::BALANCE,
+		Instruction::AND
+	});
+
+	checkCSE({
+		Instruction::BALANCE,
+		u256("0xffffffffffffffffffffffffffffffffffffffff"),
+		Instruction::AND
+	}, {
+		u256("0xffffffffffffffffffffffffffffffffffffffff"),
+		Instruction::SWAP1,
+		Instruction::BALANCE,
+		Instruction::AND
+	});
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 

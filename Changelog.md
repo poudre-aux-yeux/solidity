@@ -2,6 +2,7 @@
 
 Features:
  * Build system: Support Ubuntu Bionic.
+ * Optimizer: Remove unnecessary masking of the result of known short instructions (``ADDRESS``, ``CALLER``, ``ORIGIN`` and ``COINBASE``).
  * SMTChecker: Integration with CVC4 SMT solver
  * Syntax Checker: Warn about functions named "constructor".
 
